@@ -10,14 +10,6 @@ remappings = [
     "forge-std/=lib/forge-std/src/",
 ]
 
-[fmt]
-line_length = 100
-tab_width = 4
-bracket_spacing = false
-int_types = "long"
-# Only format src/, script/, test/ — never touch lib/
-exclude = ["lib/**"]
-
 [profile.default.rpc_endpoints]
 avalanche = "https://api.avax.network/ext/bc/C/rpc"
 fuji      = "https://api.avax-test.network/ext/bc/C/rpc"

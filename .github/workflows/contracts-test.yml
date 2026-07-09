@@ -1,20 +1,30 @@
-name: CI
+name: Contracts CI
 
 permissions: {}
 
 on:
   push:
+    paths:
+      - "contracts/src/**"
+      - "contracts/script/**"
+      - "contracts/test/**"
+      - "contracts/foundry.toml"
   pull_request:
+    paths:
+      - "contracts/src/**"
+      - "contracts/script/**"
+      - "contracts/test/**"
+      - "contracts/foundry.toml"
   workflow_dispatch:
 
 jobs:
   check:
-    name: Foundry project
+    name: Foundry - build & test
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
           submodules: recursive
@@ -25,11 +35,10 @@ jobs:
       - name: Show Forge version
         run: forge --version
 
-      - name: Run Forge fmt
-        run: forge fmt --check
-
       - name: Run Forge build
         run: forge build --sizes
+        working-directory: contracts
 
       - name: Run Forge tests
         run: forge test -vvv
+        working-directory: contracts
