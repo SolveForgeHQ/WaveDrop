@@ -71,7 +71,9 @@ contract MerkleClaim is AccessControl {
     // Events
     // -------------------------------------------------------------------------
 
-    event RootSubmitted(bytes32 indexed waveId, bytes32 merkleRoot, address token, uint256 totalAmount);
+    event RootSubmitted(
+        bytes32 indexed waveId, bytes32 merkleRoot, address token, uint256 totalAmount
+    );
 
     event Claimed(bytes32 indexed waveId, address indexed claimant, uint256 amount);
 
@@ -110,17 +112,24 @@ contract MerkleClaim is AccessControl {
      * @param token       USDC token address (must match what escrow holds).
      * @param totalAmount Total USDC to pull from escrow (in 6-decimal units).
      */
-    function submitRoot(bytes32 waveId, bytes32 merkleRoot, address escrow, address token, uint256 totalAmount)
-        external
-        onlyRole(OPERATOR_ROLE)
-    {
+    function submitRoot(
+        bytes32 waveId,
+        bytes32 merkleRoot,
+        address escrow,
+        address token,
+        uint256 totalAmount
+    ) external onlyRole(OPERATOR_ROLE) {
         if (waveClaims[waveId].active) revert WaveAlreadyActive(waveId);
         if (escrow == address(0)) revert InvalidAddress();
         if (token == address(0)) revert InvalidAddress();
         if (totalAmount == 0) revert ZeroAmount();
 
         waveClaims[waveId] = WaveClaimData({
-            merkleRoot: merkleRoot, token: token, totalAmount: totalAmount, claimedAmount: 0, active: true
+            merkleRoot: merkleRoot,
+            token: token,
+            totalAmount: totalAmount,
+            claimedAmount: 0,
+            active: true
         });
 
         // Pull the full pool from escrow into this contract.

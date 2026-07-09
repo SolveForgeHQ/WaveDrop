@@ -88,7 +88,11 @@ contract Deploy is Script {
             // Register a demo ecosystem
             bytes32 ecoTx = keccak256("demo-ecosystem");
             (bool ok, bytes memory ret) = address(registry)
-                .call(abi.encodeWithSelector(registry.registerEcosystem.selector, "Demo Ecosystem", deployer));
+                .call(
+                    abi.encodeWithSelector(
+                        registry.registerEcosystem.selector, "Demo Ecosystem", deployer
+                    )
+                );
             require(ok, "registerEcosystem failed");
             uint256 ecosystemId = abi.decode(ret, (uint256));
 
@@ -101,7 +105,9 @@ contract Deploy is Script {
             WaveEscrow escrow = new WaveEscrow(bytes32(ecoTx), usdcAddress, operator);
             console.log("WaveEscrow (demo):", address(escrow));
 
-            bytes32 waveId = registry.createWave(ecosystemId, "Wave #1 - Fuji Demo", address(escrow), opensAt, closesAt);
+            bytes32 waveId = registry.createWave(
+                ecosystemId, "Wave #1 - Fuji Demo", address(escrow), opensAt, closesAt
+            );
             console.log("Wave #1 ID (hex) :");
             console.logBytes32(waveId);
         }

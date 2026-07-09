@@ -56,7 +56,9 @@ contract WaveEscrow {
     // Events
     // -------------------------------------------------------------------------
 
-    event WaveFunded(bytes32 indexed waveId, address indexed funder, uint256 amount, uint256 newTotal);
+    event WaveFunded(
+        bytes32 indexed waveId, address indexed funder, uint256 amount, uint256 newTotal
+    );
 
     event WaveClosed(bytes32 indexed waveId, uint256 totalDeposited);
 

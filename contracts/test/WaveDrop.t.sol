@@ -91,8 +91,9 @@ contract WaveDropTest is Test {
 
         // Register the wave — escrow address known ahead of time
         vm.prank(operator);
-        waveId =
-            registry.createWave(ecosystemId, "Wave #1", predictedEscrow, block.timestamp + 100, block.timestamp + 200);
+        waveId = registry.createWave(
+            ecosystemId, "Wave #1", predictedEscrow, block.timestamp + 100, block.timestamp + 200
+        );
 
         // Deploy escrow — lands at predictedEscrow, constructed with correct waveId
         escrow = new WaveEscrow(waveId, address(usdc), operator);
@@ -457,8 +458,9 @@ contract WaveDropTest is Test {
         WaveEscrow escrow2 = new WaveEscrow(bytes32(uint256(99)), address(usdc), operator);
 
         vm.prank(operator);
-        bytes32 waveId2 =
-            registry.createWave(ecoId2, "Wave #2", address(escrow2), block.timestamp + 1, block.timestamp + 2);
+        bytes32 waveId2 = registry.createWave(
+            ecoId2, "Wave #2", address(escrow2), block.timestamp + 1, block.timestamp + 2
+        );
 
         // Wave 2 root not yet submitted — claim must revert
         vm.prank(alice);
@@ -484,8 +486,9 @@ contract WaveDropTest is Test {
         usdc.mint(funder, carolAmount);
 
         vm.prank(operator);
-        bytes32 waveId2 =
-            registry.createWave(ecoId2, "Wave #2", address(escrow2), block.timestamp + 1, block.timestamp + 2);
+        bytes32 waveId2 = registry.createWave(
+            ecoId2, "Wave #2", address(escrow2), block.timestamp + 1, block.timestamp + 2
+        );
 
         vm.prank(operator);
         registry.openWave(waveId2);

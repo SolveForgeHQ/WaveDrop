@@ -119,7 +119,8 @@ contract WaveRegistry is AccessControl {
         if (treasury == address(0)) revert InvalidAddress();
 
         id = ++_ecosystemCounter;
-        ecosystems[id] = Ecosystem({name: name, treasury: treasury, active: true, createdAt: block.timestamp});
+        ecosystems[id] =
+            Ecosystem({name: name, treasury: treasury, active: true, createdAt: block.timestamp});
 
         emit EcosystemRegistered(id, name, treasury);
     }
@@ -145,12 +146,16 @@ contract WaveRegistry is AccessControl {
      * @param opensAt      Unix timestamp when funding opens.
      * @param closesAt     Unix timestamp when contributions stop.
      */
-    function createWave(uint256 ecosystemId, string calldata name, address escrow, uint256 opensAt, uint256 closesAt)
-        external
-        onlyRole(OPERATOR_ROLE)
-        returns (bytes32 waveId)
-    {
-        if (ecosystems[ecosystemId].createdAt == 0) revert EcosystemNotFound(ecosystemId);
+    function createWave(
+        uint256 ecosystemId,
+        string calldata name,
+        address escrow,
+        uint256 opensAt,
+        uint256 closesAt
+    ) external onlyRole(OPERATOR_ROLE) returns (bytes32 waveId) {
+        if (ecosystems[ecosystemId].createdAt == 0) {
+            revert EcosystemNotFound(ecosystemId);
+        }
         if (!ecosystems[ecosystemId].active) revert EcosystemInactive(ecosystemId);
         if (escrow == address(0)) revert InvalidAddress();
         if (opensAt >= closesAt) revert InvalidTimeRange(opensAt, closesAt);
