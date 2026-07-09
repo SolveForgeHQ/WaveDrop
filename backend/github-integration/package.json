@@ -1,0 +1,30 @@
+{
+  "name": "@wavedrop/github-integration",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "WaveDrop GitHub App — webhook handler and bot",
+  "scripts": {
+    "dev":       "tsx watch src/index.ts",
+    "build":     "tsc --project tsconfig.json",
+    "start":     "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@octokit/app":               "^15.1.2",
+    "@octokit/rest":              "^21.1.1",
+    "@octokit/webhooks":          "^13.5.0",
+    "@octokit/webhooks-types":    "^7.6.1",
+    "@prisma/adapter-pg":         "^7.8.0",
+    "@prisma/client":             "^7.8.0",
+    "dotenv":                     "^16.4.7",
+    "fastify":                    "^5.10.0",
+    "pg":                         "^8.13.3"
+  },
+  "devDependencies": {
+    "@types/node":  "^20.19.43",
+    "@types/pg":    "^8.11.10",
+    "tsx":          "^4.23.0",
+    "typescript":   "^5.9.3"
+  }
+}

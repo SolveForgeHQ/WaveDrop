@@ -1,0 +1,239 @@
+// WaveDrop Prisma schema
+// Run: pnpm prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Ecosystem
+// ---------------------------------------------------------------------------
+model Ecosystem {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  logoUrl     String?
+  githubOrg   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  waves        Wave[]
+  repositories Repository[]
+}
+
+// ---------------------------------------------------------------------------
+// Wave
+// ---------------------------------------------------------------------------
+model Wave {
+  id             String     @id @default(cuid())
+  ecosystemId    String
+  name           String
+  description    String?
+  status         WaveStatus @default(UPCOMING)
+  poolAmountUsdc String     // human-readable USDC, e.g. "10000.00"
+  startsAt       DateTime
+  endsAt         DateTime
+  merkleRoot     String?    // set at SETTLED
+  onChainWaveId  String?    // bytes32 hex from WaveRegistry
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  ecosystem    Ecosystem      @relation(fields: [ecosystemId], references: [id])
+  repositories WaveRepo[]
+  pointsLedger PointsLedger[]
+  payouts      Payout[]
+  merkleClaims MerkleClaim[]
+}
+
+enum WaveStatus {
+  UPCOMING
+  ACTIVE
+  CLOSED
+  SETTLED
+}
+
+// ---------------------------------------------------------------------------
+// WaveRepo — join table linking a Wave to its Repositories
+// ---------------------------------------------------------------------------
+model WaveRepo {
+  waveId       String
+  repositoryId String
+  addedAt      DateTime @default(now())
+
+  wave       Wave       @relation(fields: [waveId], references: [id])
+  repository Repository @relation(fields: [repositoryId], references: [id])
+
+  @@id([waveId, repositoryId])
+}
+
+// ---------------------------------------------------------------------------
+// Repository
+// ---------------------------------------------------------------------------
+model Repository {
+  id             String   @id @default(cuid())
+  ecosystemId    String
+  owner          String   // GitHub org or user
+  name           String   // GitHub repo name
+  installationId String?  // GitHub App installation ID
+  createdAt      DateTime @default(now())
+
+  ecosystem    Ecosystem    @relation(fields: [ecosystemId], references: [id])
+  waves        WaveRepo[]
+  issues       Issue[]
+  pullRequests PullRequest[]
+
+  @@unique([owner, name])
+}
+
+// ---------------------------------------------------------------------------
+// Issue — tagged GitHub issue with a point value: 100 | 150 | 200
+// ---------------------------------------------------------------------------
+model Issue {
+  id           String      @id @default(cuid())
+  repositoryId String
+  githubNumber Int
+  title        String
+  url          String
+  complexity   Complexity
+  points       Int         // 100 | 150 | 200
+  isOpen       Boolean     @default(true)
+  isClaimed    Boolean     @default(false)
+  assignedTo   String?     // GitHub login of the contributor assigned via /apply
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  repository    Repository         @relation(fields: [repositoryId], references: [id])
+  pullRequests  PullRequest[]
+  applications  IssueApplication[]
+
+  @@unique([repositoryId, githubNumber])
+}
+
+enum Complexity {
+  EASY    // 100 pts
+  MEDIUM  // 150 pts
+  HARD    // 200 pts
+}
+
+// ---------------------------------------------------------------------------
+// IssueApplication — tracks /apply commands for the 5-repo cap per wave
+// ---------------------------------------------------------------------------
+model IssueApplication {
+  id            String   @id @default(cuid())
+  issueId       String
+  waveId        String
+  githubLogin   String
+  appliedAt     DateTime @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id])
+
+  @@unique([issueId, githubLogin])
+  @@index([waveId, githubLogin])
+}
+
+// ---------------------------------------------------------------------------
+// Contributor — GitHub OAuth identity + optional wallet address
+// ---------------------------------------------------------------------------
+model Contributor {
+  id              String   @id @default(cuid())
+  githubId        Int      @unique
+  githubLogin     String   @unique
+  githubEmail     String?
+  avatarUrl       String?
+  accessToken     String?  // encrypted GitHub OAuth token
+  walletAddress   String?  // checksummed EVM address for USDC payouts
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pullRequests PullRequest[]
+  ledger       PointsLedger[]
+  payouts      Payout[]
+}
+
+// ---------------------------------------------------------------------------
+// PullRequest
+// ---------------------------------------------------------------------------
+model PullRequest {
+  id            String            @id @default(cuid())
+  issueId       String
+  contributorId String
+  repositoryId  String
+  githubNumber  Int
+  title         String
+  url           String
+  status        PullRequestStatus @default(OPEN)
+  mergedAt      DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  issue        Issue        @relation(fields: [issueId], references: [id])
+  contributor  Contributor  @relation(fields: [contributorId], references: [id])
+  repository   Repository   @relation(fields: [repositoryId], references: [id])
+  ledgerEntry  PointsLedger?
+
+  @@unique([repositoryId, githubNumber])
+}
+
+enum PullRequestStatus {
+  OPEN
+  MERGED
+  CLOSED
+}
+
+// ---------------------------------------------------------------------------
+// PointsLedger — immutable log of every point award
+// ---------------------------------------------------------------------------
+model PointsLedger {
+  id            String   @id @default(cuid())
+  waveId        String
+  contributorId String
+  pullRequestId String   @unique // one ledger entry per merged PR
+  points        Int
+  reason        String?
+  createdAt     DateTime @default(now())
+
+  wave        Wave        @relation(fields: [waveId], references: [id])
+  contributor Contributor @relation(fields: [contributorId], references: [id])
+  pullRequest PullRequest @relation(fields: [pullRequestId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Payout — computed USDC per contributor per Wave (written at wave close)
+// ---------------------------------------------------------------------------
+model Payout {
+  id            String    @id @default(cuid())
+  waveId        String
+  contributorId String
+  walletAddress String
+  totalPoints   Int
+  amountUsdc    String    // raw 6-decimal integer as string, e.g. "42500000"
+  merkleProof   String[]  // array of bytes32 hex strings
+  claimedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  wave         Wave          @relation(fields: [waveId], references: [id])
+  contributor  Contributor   @relation(fields: [contributorId], references: [id])
+  merkleClaims MerkleClaim[]
+
+  @@unique([waveId, contributorId])
+}
+
+// ---------------------------------------------------------------------------
+// MerkleClaim — mirrors on-chain claim events
+// ---------------------------------------------------------------------------
+model MerkleClaim {
+  id            String   @id @default(cuid())
+  waveId        String
+  payoutId      String
+  walletAddress String
+  amountUsdc    String
+  txHash        String   @unique
+  claimedAt     DateTime @default(now())
+
+  wave   Wave   @relation(fields: [waveId], references: [id])
+  payout Payout @relation(fields: [payoutId], references: [id])
+}

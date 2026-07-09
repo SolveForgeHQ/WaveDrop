@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+out/
+.next/
+build/
+
+# Env files — never commit secrets
+.env
+.env.local
+backend/.env
+frontend/.env.local
+*.env
+
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+cache/
+broadcast/
+
+# Prisma
+backend/generated/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/settings.json
+.idea/
