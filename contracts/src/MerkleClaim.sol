@@ -2,9 +2,9 @@
 pragma solidity ^0.8.24;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {IERC20}        from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20}     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {MerkleProof}   from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 /**
  * @title MerkleClaim
@@ -54,7 +54,7 @@ contract MerkleClaim is AccessControl {
         address token;
         uint256 totalAmount;
         uint256 claimedAmount;
-        bool    active;
+        bool active;
     }
 
     // -------------------------------------------------------------------------
@@ -71,18 +71,9 @@ contract MerkleClaim is AccessControl {
     // Events
     // -------------------------------------------------------------------------
 
-    event RootSubmitted(
-        bytes32 indexed waveId,
-        bytes32         merkleRoot,
-        address         token,
-        uint256         totalAmount
-    );
+    event RootSubmitted(bytes32 indexed waveId, bytes32 merkleRoot, address token, uint256 totalAmount);
 
-    event Claimed(
-        bytes32 indexed waveId,
-        address indexed claimant,
-        uint256         amount
-    );
+    event Claimed(bytes32 indexed waveId, address indexed claimant, uint256 amount);
 
     // -------------------------------------------------------------------------
     // Errors
@@ -119,24 +110,17 @@ contract MerkleClaim is AccessControl {
      * @param token       USDC token address (must match what escrow holds).
      * @param totalAmount Total USDC to pull from escrow (in 6-decimal units).
      */
-    function submitRoot(
-        bytes32 waveId,
-        bytes32 merkleRoot,
-        address escrow,
-        address token,
-        uint256 totalAmount
-    ) external onlyRole(OPERATOR_ROLE) {
-        if (waveClaims[waveId].active)  revert WaveAlreadyActive(waveId);
-        if (escrow   == address(0))     revert InvalidAddress();
-        if (token    == address(0))     revert InvalidAddress();
-        if (totalAmount == 0)           revert ZeroAmount();
+    function submitRoot(bytes32 waveId, bytes32 merkleRoot, address escrow, address token, uint256 totalAmount)
+        external
+        onlyRole(OPERATOR_ROLE)
+    {
+        if (waveClaims[waveId].active) revert WaveAlreadyActive(waveId);
+        if (escrow == address(0)) revert InvalidAddress();
+        if (token == address(0)) revert InvalidAddress();
+        if (totalAmount == 0) revert ZeroAmount();
 
         waveClaims[waveId] = WaveClaimData({
-            merkleRoot:    merkleRoot,
-            token:         token,
-            totalAmount:   totalAmount,
-            claimedAmount: 0,
-            active:        true
+            merkleRoot: merkleRoot, token: token, totalAmount: totalAmount, claimedAmount: 0, active: true
         });
 
         // Pull the full pool from escrow into this contract.
@@ -155,15 +139,11 @@ contract MerkleClaim is AccessControl {
      * @param amount  USDC amount (6-decimal units) allocated to msg.sender.
      * @param proof   Merkle proof for leaf = keccak256(abi.encodePacked(msg.sender, amount)).
      */
-    function claim(
-        bytes32          waveId,
-        uint256          amount,
-        bytes32[] calldata proof
-    ) external {
+    function claim(bytes32 waveId, uint256 amount, bytes32[] calldata proof) external {
         WaveClaimData storage data = waveClaims[waveId];
-        if (!data.active)                         revert WaveNotActive(waveId);
-        if (hasClaimed[waveId][msg.sender])        revert AlreadyClaimed(waveId, msg.sender);
-        if (amount == 0)                           revert ZeroAmount();
+        if (!data.active) revert WaveNotActive(waveId);
+        if (hasClaimed[waveId][msg.sender]) revert AlreadyClaimed(waveId, msg.sender);
+        if (amount == 0) revert ZeroAmount();
 
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender, amount));
         if (!MerkleProof.verify(proof, data.merkleRoot, leaf)) revert InvalidProof();

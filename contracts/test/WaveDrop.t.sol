@@ -4,9 +4,9 @@ pragma solidity ^0.8.24;
 import {Test, console} from "forge-std/Test.sol";
 
 import {WaveRegistry} from "../src/WaveRegistry.sol";
-import {WaveEscrow}   from "../src/WaveEscrow.sol";
-import {MerkleClaim}  from "../src/MerkleClaim.sol";
-import {MockERC20}    from "../src/MockERC20.sol";
+import {WaveEscrow} from "../src/WaveEscrow.sol";
+import {MerkleClaim} from "../src/MerkleClaim.sol";
+import {MockERC20} from "../src/MockERC20.sol";
 
 /**
  * @title WaveDropTest
@@ -28,20 +28,20 @@ contract WaveDropTest is Test {
     // Actors
     // -------------------------------------------------------------------------
 
-    address internal admin    = makeAddr("admin");
+    address internal admin = makeAddr("admin");
     address internal operator = makeAddr("operator");
-    address internal funder   = makeAddr("funder");
-    address internal alice    = makeAddr("alice");
-    address internal bob      = makeAddr("bob");
+    address internal funder = makeAddr("funder");
+    address internal alice = makeAddr("alice");
+    address internal bob = makeAddr("bob");
 
     // -------------------------------------------------------------------------
     // Contracts
     // -------------------------------------------------------------------------
 
-    MockERC20    internal usdc;
+    MockERC20 internal usdc;
     WaveRegistry internal registry;
-    MerkleClaim  internal merkleClaim;
-    WaveEscrow   internal escrow;
+    MerkleClaim internal merkleClaim;
+    WaveEscrow internal escrow;
 
     // -------------------------------------------------------------------------
     // Shared wave state
@@ -51,8 +51,8 @@ contract WaveDropTest is Test {
     uint256 internal ecosystemId;
 
     uint256 internal constant ALICE_AMOUNT = 600_000; // $0.60 USDC (6 dec)
-    uint256 internal constant BOB_AMOUNT   = 400_000; // $0.40 USDC
-    uint256 internal constant TOTAL_POOL   = ALICE_AMOUNT + BOB_AMOUNT;
+    uint256 internal constant BOB_AMOUNT = 400_000; // $0.40 USDC
+    uint256 internal constant TOTAL_POOL = ALICE_AMOUNT + BOB_AMOUNT;
 
     bytes32 internal leafAlice;
     bytes32 internal leafBob;
@@ -69,9 +69,9 @@ contract WaveDropTest is Test {
 
         // Deploy core contracts under admin
         vm.startPrank(admin);
-        registry    = new WaveRegistry(admin);
+        registry = new WaveRegistry(admin);
         merkleClaim = new MerkleClaim(admin);
-        registry.grantRole(registry.OPERATOR_ROLE(),       operator);
+        registry.grantRole(registry.OPERATOR_ROLE(), operator);
         merkleClaim.grantRole(merkleClaim.OPERATOR_ROLE(), operator);
         vm.stopPrank();
 
@@ -91,13 +91,8 @@ contract WaveDropTest is Test {
 
         // Register the wave — escrow address known ahead of time
         vm.prank(operator);
-        waveId = registry.createWave(
-            ecosystemId,
-            "Wave #1",
-            predictedEscrow,
-            block.timestamp + 100,
-            block.timestamp + 200
-        );
+        waveId =
+            registry.createWave(ecosystemId, "Wave #1", predictedEscrow, block.timestamp + 100, block.timestamp + 200);
 
         // Deploy escrow — lands at predictedEscrow, constructed with correct waveId
         escrow = new WaveEscrow(waveId, address(usdc), operator);
@@ -117,12 +112,10 @@ contract WaveDropTest is Test {
     ///      Root = commutativeKeccak256(leafAlice, leafBob).
     function _buildTree() internal {
         leafAlice = keccak256(abi.encodePacked(alice, ALICE_AMOUNT));
-        leafBob   = keccak256(abi.encodePacked(bob,   BOB_AMOUNT));
+        leafBob = keccak256(abi.encodePacked(bob, BOB_AMOUNT));
 
         // Replicate commutativeKeccak256 to get the expected root
-        (bytes32 lo, bytes32 hi) = leafAlice < leafBob
-            ? (leafAlice, leafBob)
-            : (leafBob,   leafAlice);
+        (bytes32 lo, bytes32 hi) = leafAlice < leafBob ? (leafAlice, leafBob) : (leafBob, leafAlice);
         merkleRoot = keccak256(abi.encodePacked(lo, hi));
 
         proofAlice = new bytes32[](1);
@@ -160,7 +153,7 @@ contract WaveDropTest is Test {
         vm.prank(operator);
         uint256 id = registry.registerEcosystem("Foo", address(0x1234));
         WaveRegistry.Ecosystem memory eco = registry.getEcosystem(id);
-        assertEq(eco.name,     "Foo");
+        assertEq(eco.name, "Foo");
         assertEq(eco.treasury, address(0x1234));
         assertTrue(eco.active);
     }
@@ -385,9 +378,7 @@ contract WaveDropTest is Test {
         vm.startPrank(alice);
         merkleClaim.claim(waveId, ALICE_AMOUNT, proofAlice);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(MerkleClaim.AlreadyClaimed.selector, waveId, alice)
-        );
+        vm.expectRevert(abi.encodeWithSelector(MerkleClaim.AlreadyClaimed.selector, waveId, alice));
         merkleClaim.claim(waveId, ALICE_AMOUNT, proofAlice);
         vm.stopPrank();
     }
@@ -418,18 +409,14 @@ contract WaveDropTest is Test {
         bytes32 fakeWaveId = keccak256("nonexistent");
 
         vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(MerkleClaim.WaveNotActive.selector, fakeWaveId)
-        );
+        vm.expectRevert(abi.encodeWithSelector(MerkleClaim.WaveNotActive.selector, fakeWaveId));
         merkleClaim.claim(fakeWaveId, ALICE_AMOUNT, proofAlice);
     }
 
     function test_claimBeforeRootSubmitted_reverts() public {
         // Wave not settled yet — root never submitted
         vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(MerkleClaim.WaveNotActive.selector, waveId)
-        );
+        vm.expectRevert(abi.encodeWithSelector(MerkleClaim.WaveNotActive.selector, waveId));
         merkleClaim.claim(waveId, ALICE_AMOUNT, proofAlice);
     }
 
@@ -437,9 +424,7 @@ contract WaveDropTest is Test {
         _settleWave();
 
         vm.prank(operator);
-        vm.expectRevert(
-            abi.encodeWithSelector(MerkleClaim.WaveAlreadyActive.selector, waveId)
-        );
+        vm.expectRevert(abi.encodeWithSelector(MerkleClaim.WaveAlreadyActive.selector, waveId));
         merkleClaim.submitRoot(waveId, merkleRoot, address(escrow), address(usdc), TOTAL_POOL);
     }
 
@@ -472,16 +457,12 @@ contract WaveDropTest is Test {
         WaveEscrow escrow2 = new WaveEscrow(bytes32(uint256(99)), address(usdc), operator);
 
         vm.prank(operator);
-        bytes32 waveId2 = registry.createWave(
-            ecoId2, "Wave #2", address(escrow2),
-            block.timestamp + 1, block.timestamp + 2
-        );
+        bytes32 waveId2 =
+            registry.createWave(ecoId2, "Wave #2", address(escrow2), block.timestamp + 1, block.timestamp + 2);
 
         // Wave 2 root not yet submitted — claim must revert
         vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(MerkleClaim.WaveNotActive.selector, waveId2)
-        );
+        vm.expectRevert(abi.encodeWithSelector(MerkleClaim.WaveNotActive.selector, waveId2));
         merkleClaim.claim(waveId2, ALICE_AMOUNT, proofAlice);
     }
 
@@ -503,10 +484,8 @@ contract WaveDropTest is Test {
         usdc.mint(funder, carolAmount);
 
         vm.prank(operator);
-        bytes32 waveId2 = registry.createWave(
-            ecoId2, "Wave #2", address(escrow2),
-            block.timestamp + 1, block.timestamp + 2
-        );
+        bytes32 waveId2 =
+            registry.createWave(ecoId2, "Wave #2", address(escrow2), block.timestamp + 1, block.timestamp + 2);
 
         vm.prank(operator);
         registry.openWave(waveId2);

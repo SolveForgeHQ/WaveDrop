@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IERC20}    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
@@ -30,21 +30,25 @@ contract WaveEscrow {
     // Types
     // -------------------------------------------------------------------------
 
-    enum Status { OPEN, CLOSED, SETTLED }
+    enum Status {
+        OPEN,
+        CLOSED,
+        SETTLED
+    }
 
     // -------------------------------------------------------------------------
     // Immutables
     // -------------------------------------------------------------------------
 
     bytes32 public immutable waveId;
-    IERC20  public immutable token;
+    IERC20 public immutable token;
     address public immutable operator;
 
     // -------------------------------------------------------------------------
     // State
     // -------------------------------------------------------------------------
 
-    Status  public status;
+    Status public status;
     uint256 public totalDeposited;
     mapping(address => uint256) public deposits;
 
@@ -52,20 +56,11 @@ contract WaveEscrow {
     // Events
     // -------------------------------------------------------------------------
 
-    event WaveFunded(
-        bytes32 indexed waveId,
-        address indexed funder,
-        uint256 amount,
-        uint256 newTotal
-    );
+    event WaveFunded(bytes32 indexed waveId, address indexed funder, uint256 amount, uint256 newTotal);
 
     event WaveClosed(bytes32 indexed waveId, uint256 totalDeposited);
 
-    event RootSubmitted(
-        bytes32 indexed waveId,
-        address indexed merkleClaim,
-        uint256 amount
-    );
+    event RootSubmitted(bytes32 indexed waveId, address indexed merkleClaim, uint256 amount);
 
     // -------------------------------------------------------------------------
     // Errors
@@ -97,13 +92,13 @@ contract WaveEscrow {
      * @param _operator  Backend signer that controls close/settle.
      */
     constructor(bytes32 _waveId, address _token, address _operator) {
-        if (_token    == address(0)) revert InvalidAddress();
+        if (_token == address(0)) revert InvalidAddress();
         if (_operator == address(0)) revert InvalidAddress();
 
-        waveId   = _waveId;
-        token    = IERC20(_token);
+        waveId = _waveId;
+        token = IERC20(_token);
         operator = _operator;
-        status   = Status.OPEN;
+        status = Status.OPEN;
     }
 
     // -------------------------------------------------------------------------
@@ -117,10 +112,10 @@ contract WaveEscrow {
      */
     function fund(uint256 amount) external {
         if (status != Status.OPEN) revert EscrowNotOpen();
-        if (amount == 0)           revert ZeroAmount();
+        if (amount == 0) revert ZeroAmount();
 
         deposits[msg.sender] += amount;
-        totalDeposited        += amount;
+        totalDeposited += amount;
 
         token.safeTransferFrom(msg.sender, address(this), amount);
 
@@ -147,13 +142,10 @@ contract WaveEscrow {
      * @param merkleClaim  Address of the MerkleClaim contract.
      * @param amount       Must equal totalDeposited (sanity check).
      */
-    function approveForSettlement(
-        address merkleClaim,
-        uint256 amount
-    ) external onlyOperator {
-        if (status != Status.CLOSED)   revert EscrowNotClosed();
+    function approveForSettlement(address merkleClaim, uint256 amount) external onlyOperator {
+        if (status != Status.CLOSED) revert EscrowNotClosed();
         if (merkleClaim == address(0)) revert InvalidAddress();
-        if (amount == 0)               revert ZeroAmount();
+        if (amount == 0) revert ZeroAmount();
 
         status = Status.SETTLED;
 

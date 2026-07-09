@@ -4,9 +4,9 @@ pragma solidity ^0.8.24;
 import {Script, console} from "forge-std/Script.sol";
 
 import {WaveRegistry} from "../src/WaveRegistry.sol";
-import {WaveEscrow}   from "../src/WaveEscrow.sol";
-import {MerkleClaim}  from "../src/MerkleClaim.sol";
-import {MockERC20}    from "../src/MockERC20.sol";
+import {WaveEscrow} from "../src/WaveEscrow.sol";
+import {MerkleClaim} from "../src/MerkleClaim.sol";
+import {MockERC20} from "../src/MockERC20.sol";
 
 /**
  * @title Deploy
@@ -39,9 +39,9 @@ import {MockERC20}    from "../src/MockERC20.sol";
  */
 contract Deploy is Script {
     function run() external {
-        address deployer  = vm.envAddress("DEPLOYER_ADDRESS");
-        address operator  = vm.envAddress("OPERATOR_ADDRESS");
-        bool    mockUsdc  = vm.envOr("DEPLOY_MOCK_USDC", true);
+        address deployer = vm.envAddress("DEPLOYER_ADDRESS");
+        address operator = vm.envAddress("OPERATOR_ADDRESS");
+        bool mockUsdc = vm.envOr("DEPLOY_MOCK_USDC", true);
 
         address usdcAddress;
 
@@ -87,18 +87,13 @@ contract Deploy is Script {
         if (mockUsdc) {
             // Register a demo ecosystem
             bytes32 ecoTx = keccak256("demo-ecosystem");
-            (bool ok, bytes memory ret) = address(registry).call(
-                abi.encodeWithSelector(
-                    registry.registerEcosystem.selector,
-                    "Demo Ecosystem",
-                    deployer
-                )
-            );
+            (bool ok, bytes memory ret) = address(registry)
+                .call(abi.encodeWithSelector(registry.registerEcosystem.selector, "Demo Ecosystem", deployer));
             require(ok, "registerEcosystem failed");
             uint256 ecosystemId = abi.decode(ret, (uint256));
 
             // createWave needs opensAt < closesAt
-            uint256 opensAt  = block.timestamp + 60;
+            uint256 opensAt = block.timestamp + 60;
             uint256 closesAt = block.timestamp + 60 * 60 * 24 * 7; // +7 days
 
             // Deploy escrow with a placeholder waveId; we'll update after
@@ -106,13 +101,7 @@ contract Deploy is Script {
             WaveEscrow escrow = new WaveEscrow(bytes32(ecoTx), usdcAddress, operator);
             console.log("WaveEscrow (demo):", address(escrow));
 
-            bytes32 waveId = registry.createWave(
-                ecosystemId,
-                "Wave #1 — Fuji Demo",
-                address(escrow),
-                opensAt,
-                closesAt
-            );
+            bytes32 waveId = registry.createWave(ecosystemId, "Wave #1 - Fuji Demo", address(escrow), opensAt, closesAt);
             console.log("Wave #1 ID (hex) :");
             console.logBytes32(waveId);
         }
@@ -124,8 +113,8 @@ contract Deploy is Script {
         // ------------------------------------------------------------------
         console.log("---");
         console.log("Add to .env:");
-        console.log("  REGISTRY_ADDRESS=",    address(registry));
+        console.log("  REGISTRY_ADDRESS=", address(registry));
         console.log("  MERKLE_CLAIM_ADDRESS=", address(merkleClaim));
-        console.log("  USDC_ADDRESS=",         usdcAddress);
+        console.log("  USDC_ADDRESS=", usdcAddress);
     }
 }

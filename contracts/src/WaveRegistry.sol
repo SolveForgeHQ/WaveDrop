@@ -36,28 +36,28 @@ contract WaveRegistry is AccessControl {
     // -------------------------------------------------------------------------
 
     enum WaveStatus {
-        PENDING,  // created but not yet open for funding
-        OPEN,     // ecosystem partners can deposit
-        CLOSED,   // contribution window ended; awaiting Merkle root submission
-        SETTLED   // Merkle root submitted; claims live
+        PENDING, // created but not yet open for funding
+        OPEN, // ecosystem partners can deposit
+        CLOSED, // contribution window ended; awaiting Merkle root submission
+        SETTLED // Merkle root submitted; claims live
     }
 
     struct Ecosystem {
-        string  name;
-        address treasury;   // multisig or EOA that funds Waves
-        bool    active;
+        string name;
+        address treasury; // multisig or EOA that funds Waves
+        bool active;
         uint256 createdAt;
     }
 
     struct Wave {
-        bytes32    id;
-        uint256    ecosystemId;
-        string     name;
-        address    escrow;      // WaveEscrow deployed for this wave
+        bytes32 id;
+        uint256 ecosystemId;
+        string name;
+        address escrow; // WaveEscrow deployed for this wave
         WaveStatus status;
-        uint256    opensAt;
-        uint256    closesAt;
-        uint256    createdAt;
+        uint256 opensAt;
+        uint256 closesAt;
+        uint256 createdAt;
     }
 
     // -------------------------------------------------------------------------
@@ -68,7 +68,7 @@ contract WaveRegistry is AccessControl {
     uint256 private _waveCounter;
 
     mapping(uint256 => Ecosystem) public ecosystems;
-    mapping(bytes32 => Wave)      public waves;
+    mapping(bytes32 => Wave) public waves;
     /// @notice Ordered list of wave IDs so callers can enumerate them.
     bytes32[] public waveIds;
 
@@ -111,19 +111,15 @@ contract WaveRegistry is AccessControl {
      * @param name     Human-readable project name.
      * @param treasury Address authorised to fund waves for this ecosystem.
      */
-    function registerEcosystem(
-        string calldata name,
-        address treasury
-    ) external onlyRole(OPERATOR_ROLE) returns (uint256 id) {
+    function registerEcosystem(string calldata name, address treasury)
+        external
+        onlyRole(OPERATOR_ROLE)
+        returns (uint256 id)
+    {
         if (treasury == address(0)) revert InvalidAddress();
 
         id = ++_ecosystemCounter;
-        ecosystems[id] = Ecosystem({
-            name:      name,
-            treasury:  treasury,
-            active:    true,
-            createdAt: block.timestamp
-        });
+        ecosystems[id] = Ecosystem({name: name, treasury: treasury, active: true, createdAt: block.timestamp});
 
         emit EcosystemRegistered(id, name, treasury);
     }
@@ -131,10 +127,7 @@ contract WaveRegistry is AccessControl {
     /**
      * @notice Toggle an ecosystem's active flag.
      */
-    function setEcosystemActive(
-        uint256 id,
-        bool active
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setEcosystemActive(uint256 id, bool active) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (ecosystems[id].createdAt == 0) revert EcosystemNotFound(id);
         ecosystems[id].active = active;
     }
@@ -152,29 +145,27 @@ contract WaveRegistry is AccessControl {
      * @param opensAt      Unix timestamp when funding opens.
      * @param closesAt     Unix timestamp when contributions stop.
      */
-    function createWave(
-        uint256 ecosystemId,
-        string  calldata name,
-        address escrow,
-        uint256 opensAt,
-        uint256 closesAt
-    ) external onlyRole(OPERATOR_ROLE) returns (bytes32 waveId) {
+    function createWave(uint256 ecosystemId, string calldata name, address escrow, uint256 opensAt, uint256 closesAt)
+        external
+        onlyRole(OPERATOR_ROLE)
+        returns (bytes32 waveId)
+    {
         if (ecosystems[ecosystemId].createdAt == 0) revert EcosystemNotFound(ecosystemId);
-        if (!ecosystems[ecosystemId].active)        revert EcosystemInactive(ecosystemId);
-        if (escrow == address(0))                   revert InvalidAddress();
-        if (opensAt >= closesAt)                    revert InvalidTimeRange(opensAt, closesAt);
+        if (!ecosystems[ecosystemId].active) revert EcosystemInactive(ecosystemId);
+        if (escrow == address(0)) revert InvalidAddress();
+        if (opensAt >= closesAt) revert InvalidTimeRange(opensAt, closesAt);
 
         waveId = keccak256(abi.encodePacked(++_waveCounter, ecosystemId, block.timestamp));
 
         waves[waveId] = Wave({
-            id:          waveId,
+            id: waveId,
             ecosystemId: ecosystemId,
-            name:        name,
-            escrow:      escrow,
-            status:      WaveStatus.PENDING,
-            opensAt:     opensAt,
-            closesAt:    closesAt,
-            createdAt:   block.timestamp
+            name: name,
+            escrow: escrow,
+            status: WaveStatus.PENDING,
+            opensAt: opensAt,
+            closesAt: closesAt,
+            createdAt: block.timestamp
         });
 
         waveIds.push(waveId);
