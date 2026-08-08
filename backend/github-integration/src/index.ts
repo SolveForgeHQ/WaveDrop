@@ -2,9 +2,20 @@ import { config } from "dotenv";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Load .env from the parent backend directory
-const __dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: resolve(__dirname, "../../.env") });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = dirname(__filename);
+
+// Try multiple locations in order: src/../../.env, cwd/../.env, cwd/.env
+const candidates = [
+  resolve(__dirname, "..", "..", ".env"),      // src/ → github-integration/ → backend/.env
+  resolve(process.cwd(), "..", ".env"),         // cwd=github-integration/ → backend/.env
+  resolve(process.cwd(), ".env"),               // cwd=backend/ → backend/.env
+];
+for (const p of candidates) {
+  const result = config({ path: p });
+  if (!result.error) break;
+}
+config({ path: envPath });
 
 import Fastify from "fastify";
 import { createHmac, timingSafeEqual } from "node:crypto";

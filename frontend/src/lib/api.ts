@@ -93,6 +93,7 @@ export interface Issue {
   id: string; githubNumber: number; title: string; url: string;
   complexity: Complexity; points: number; isOpen: boolean;
   isClaimed: boolean; assignedTo?: string;
+  applicationCount?: number;
   repository: { owner: string; name: string };
 }
 

@@ -17,14 +17,28 @@ export async function authRoutes(app: FastifyInstance) {
     const token = await app.githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
     const accessToken = token.token.access_token as string;
 
-    const userInfo   = await fetchGitHubUser(accessToken);
+    const userInfo    = await fetchGitHubUser(accessToken);
     const contributor = await loginOrRegisterContributor(accessToken, userInfo);
 
     req.session.contributorId = contributor.id;
     req.session.githubLogin   = contributor.githubLogin;
 
-    const redirectTo = process.env["FRONTEND_URL"] ?? "http://localhost:3000";
-    reply.redirect(`${redirectTo}/dashboard`);
+    const frontendUrl = process.env["FRONTEND_URL"] ?? "http://localhost:3000";
+
+    // Decode the redirect path from the OAuth state we encoded at login
+    let redirectPath = "/waves";
+    try {
+      const query = req.query as Record<string, string>;
+      const state  = query["state"] ?? token.token.state as string ?? "";
+      if (state) {
+        const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8")) as { redirect?: string };
+        if (decoded.redirect?.startsWith("/")) redirectPath = decoded.redirect;
+      }
+    } catch {
+      // malformed state — fall back to /waves
+    }
+
+    reply.redirect(`${frontendUrl}${redirectPath}`);
   });
 
   /**

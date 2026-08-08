@@ -109,7 +109,6 @@ model Issue {
   repository    Repository         @relation(fields: [repositoryId], references: [id])
   pullRequests  PullRequest[]
   applications  IssueApplication[]
-
   @@unique([repositoryId, githubNumber])
 }
 

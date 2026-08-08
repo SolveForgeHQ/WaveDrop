@@ -70,7 +70,10 @@ export const issueRepo = {
         skip,
         take:    pageSize,
         orderBy: { points: "desc" },
-        include: { repository: { select: { owner: true, name: true } } },
+        include: {
+          repository: { select: { owner: true, name: true } },
+          _count: { select: { applications: true } },
+        },
       }),
       prisma.issue.count({ where }),
     ]);

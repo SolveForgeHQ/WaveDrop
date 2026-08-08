@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -130,8 +131,7 @@ export function Sidebar() {
         {me ? (
           <div className="flex items-center gap-2 px-2 py-1.5">
             {me.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={me.avatarUrl} alt={me.githubLogin} className="w-5 h-5 rounded-full" />
+              <Image src={me.avatarUrl} alt={me.githubLogin} width={20} height={20} className="rounded-full" />
             ) : (
               <div className="w-5 h-5 rounded-full bg-[#27272e]" />
             )}

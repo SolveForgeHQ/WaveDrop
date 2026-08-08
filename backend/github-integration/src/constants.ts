@@ -16,6 +16,9 @@ export const MAX_APPLICATIONS_PER_WAVE = 5;
 /** The /apply command contributors post in issue comments */
 export const APPLY_COMMAND = "/apply";
 
+/** The /assign command maintainers use to assign an applicant */
+export const ASSIGN_COMMAND = "/assign";
+
 /** Regex to extract "Closes #N" / "Fixes #N" / "Resolves #N" from PR body */
 export const CLOSES_ISSUE_RE = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
 

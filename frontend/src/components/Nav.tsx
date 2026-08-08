@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAccount, useDisconnect } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
@@ -91,13 +92,19 @@ export function Nav() {
             <span className="text-sm font-bold text-[#f0f0f4]">WaveDrop</span>
           </Link>
 
-          {/* RIGHT: wallet address, username, or login button */}
+          {/* RIGHT: wallet address, avatar+username, or login button */}
           {isConnected && address ? (
             <span className="text-xs font-mono text-[#55556a] shrink-0">
               {address.slice(0, 6)}…{address.slice(-4)}
             </span>
           ) : me ? (
-            <span className="text-xs text-[#55556a] shrink-0">@{me.githubLogin}</span>
+            <Link href="/profile" className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity">
+              {me.avatarUrl
+                ? <Image src={me.avatarUrl} alt={me.githubLogin} width={24} height={24} className="rounded-full" />
+                : <div className="w-6 h-6 rounded-full bg-[#27272e]" />
+              }
+              <span className="text-xs text-[#55556a] hidden xs:inline">@{me.githubLogin}</span>
+            </Link>
           ) : (
             <Link href="/login" className="shrink-0">
               <Button size="sm" variant="primary" className="gap-1.5 px-3">
@@ -149,23 +156,19 @@ export function Nav() {
               </div>
             ))}
 
-            {/* Bottom auth row — only shown when signed in */}
-            {me && (
+            {/* Bottom: only show disconnect if wallet connected */}
+            {me && isConnected && address && (
               <div className="mt-4 pt-3 border-t border-[#27272e]">
                 <div className="flex items-center justify-between px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {me.avatarUrl && <img src={me.avatarUrl} alt="" className="w-5 h-5 rounded-full" />}
-                    <span className="text-xs text-[#8888a0]">@{me.githubLogin}</span>
-                  </div>
-                  {isConnected && address && (
-                    <button
-                      onClick={() => { disconnect(); setOpen(false); }}
-                      className="text-xs text-[#55556a] hover:text-[#f0f0f4] transition-colors"
-                    >
-                      Disconnect
-                    </button>
-                  )}
+                  <span className="text-xs font-mono text-[#55556a]">
+                    {address.slice(0, 6)}…{address.slice(-4)}
+                  </span>
+                  <button
+                    onClick={() => { disconnect(); setOpen(false); }}
+                    className="text-xs text-[#55556a] hover:text-[#f0f0f4] transition-colors"
+                  >
+                    Disconnect
+                  </button>
                 </div>
               </div>
             )}
@@ -187,7 +190,13 @@ export function Nav() {
               <Button size="sm" variant="ghost" onClick={() => disconnect()}>Disconnect</Button>
             </>
           ) : me ? (
-            <span className="text-xs text-[#55556a]">@{me.githubLogin}</span>
+            <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              {me.avatarUrl
+                ? <Image src={me.avatarUrl} alt={me.githubLogin} width={24} height={24} className="rounded-full" />
+                : <div className="w-6 h-6 rounded-full bg-[#27272e]" />
+              }
+              <span className="text-xs text-[#55556a]">@{me.githubLogin}</span>
+            </Link>
           ) : (
             <Link href="/login">
               <Button size="sm" variant="primary" className="gap-2">

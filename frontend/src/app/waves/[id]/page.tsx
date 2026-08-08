@@ -124,7 +124,11 @@ export default function WavePage({ params }: { params: Promise<{ id: string }> }
                       {issue.isClaimed ? (
                         <Badge variant="muted">Claimed</Badge>
                       ) : issue.assignedTo ? (
-                        <Badge variant="warning">@{issue.assignedTo}</Badge>
+                        <Badge variant="warning">Assigned</Badge>
+                      ) : (issue.applicationCount ?? 0) > 0 ? (
+                        <Badge variant="accent">
+                          {issue.applicationCount} applied
+                        </Badge>
                       ) : (
                         <Badge variant="success">Open</Badge>
                       )}
