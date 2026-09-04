@@ -62,29 +62,29 @@ export async function generateMerkleTree(waveId: string): Promise<MerkleGenerati
   }
 
   // 2. Fetch contributor wallet addresses
-  const contributorIds = ledgerTotals.map((t) => t.contributorId);
+  const contributorIds = ledgerTotals.map((t: { contributorId: string }) => t.contributorId);
   const contributors   = await prisma.contributor.findMany({
     where:  { id: { in: contributorIds } },
     select: { id: true, walletAddress: true, githubLogin: true },
   });
 
-  const walletMap = new Map(contributors.map((c) => [c.id, c.walletAddress]));
+  const walletMap = new Map(contributors.map((c: { id: string; walletAddress: string | null }) => [c.id, c.walletAddress]));
 
   // Filter out contributors without a linked wallet — they forfeit their share
-  const eligible = ledgerTotals.filter((t) => walletMap.get(t.contributorId));
+  const eligible = ledgerTotals.filter((t: { contributorId: string; _sum: { points: number | null } }) => walletMap.get(t.contributorId));
 
   if (eligible.length === 0) {
     throw new Error("No contributors have linked a wallet address");
   }
 
-  const totalPoints = eligible.reduce((sum, t) => sum + (t._sum.points ?? 0), 0);
+  const totalPoints = eligible.reduce((sum: number, t: { _sum: { points: number | null } }) => sum + (t._sum.points ?? 0), 0);
 
   // 3. Convert points → USDC (pool stored as human-readable, convert to 6-dec bigint)
   const poolUsdc = BigInt(
     Math.round(parseFloat(wave.poolAmountUsdc) * 1_000_000)
   );
 
-  const allocations = eligible.map((t) => {
+  const allocations = eligible.map((t: { contributorId: string; _sum: { points: number | null } }) => {
     const points     = t._sum.points ?? 0;
     const amountUsdc = (poolUsdc * BigInt(points)) / BigInt(totalPoints);
     const wallet     = walletMap.get(t.contributorId) as string; // guarded above
@@ -92,7 +92,7 @@ export async function generateMerkleTree(waveId: string): Promise<MerkleGenerati
   });
 
   // 4. Build Merkle tree
-  const leaves = allocations.map(({ wallet, amountUsdc }) =>
+  const leaves = allocations.map(({ wallet, amountUsdc }: { wallet: string; amountUsdc: bigint }) =>
     encodeLeaf(wallet, amountUsdc)
   );
 
@@ -104,9 +104,9 @@ export async function generateMerkleTree(waveId: string): Promise<MerkleGenerati
   const merkleRoot = "0x" + tree.getRoot().toString("hex");
 
   // 5. Persist payout rows with proofs
-  const payoutInputs = allocations.map((alloc, i) => {
+  const payoutInputs = allocations.map((alloc: { contributorId: string; wallet: string; points: number; amountUsdc: bigint }, i: number) => {
     const leaf  = leaves[i] as Buffer;
-    const proof = tree.getProof(leaf).map((p) => "0x" + p.data.toString("hex"));
+    const proof = tree.getProof(leaf).map((p: { data: Buffer }) => "0x" + p.data.toString("hex"));
     return {
       waveId,
       contributorId: alloc.contributorId,
@@ -122,7 +122,7 @@ export async function generateMerkleTree(waveId: string): Promise<MerkleGenerati
   return {
     merkleRoot,
     totalLeaves: allocations.length,
-    payouts: payoutInputs.map((p) => ({
+    payouts: payoutInputs.map((p: { walletAddress: string; amountUsdc: string; totalPoints: number; merkleProof: string[] }) => ({
       walletAddress: p.walletAddress,
       amountUsdc:    p.amountUsdc,
       totalPoints:   p.totalPoints,

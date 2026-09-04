@@ -15,7 +15,6 @@ for (const p of candidates) {
   const result = config({ path: p });
   if (!result.error) break;
 }
-config({ path: envPath });
 
 import Fastify from "fastify";
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -100,10 +99,11 @@ async function dispatchWebhook(eventType: string, payload: unknown) {
     server.log.warn("GitHub App not configured — ignoring webhook");
     return;
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await githubApp.webhooks.receive({
     id:      "dispatch",
-    name:    eventType as Parameters<typeof githubApp.webhooks.receive>[0]["name"],
-    payload: payload as Parameters<typeof githubApp.webhooks.receive>[0]["payload"],
+    name:    eventType as any,
+    payload: payload as any,
   });
 }
 

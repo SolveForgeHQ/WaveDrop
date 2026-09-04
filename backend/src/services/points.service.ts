@@ -60,7 +60,8 @@ export async function awardPoints(input: AwardPointsInput) {
   if (existingPr) throw new Error(`PR #${input.prNumber} already recorded`);
 
   // Write PR + ledger entry atomically using an interactive transaction
-  const result = await prisma.$transaction(async (tx) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await prisma.$transaction(async (tx: any) => {
     const pr = await tx.pullRequest.create({
       data: {
         issueId:       issue.id,
@@ -117,13 +118,13 @@ export async function getLeaderboard(waveId: string, page = 1, pageSize = 20) {
 
   // Enrich with contributor info
   const contributors = await prisma.contributor.findMany({
-    where:  { id: { in: totals.map((t) => t.contributorId) } },
+    where:  { id: { in: totals.map((t: { contributorId: string }) => t.contributorId) } },
     select: { id: true, githubLogin: true, avatarUrl: true, walletAddress: true },
   });
 
-  const contributorMap = new Map(contributors.map((c) => [c.id, c]));
+  const contributorMap = new Map(contributors.map((c: { id: string; githubLogin: string; avatarUrl: string | null; walletAddress: string | null }) => [c.id, c]));
 
-  const entries = totals.map((t, i) => ({
+  const entries = totals.map((t: { contributorId: string; _sum: { points: number | null } }, i: number) => ({
     rank:        skip + i + 1,
     contributor: contributorMap.get(t.contributorId),
     totalPoints: t._sum.points ?? 0,

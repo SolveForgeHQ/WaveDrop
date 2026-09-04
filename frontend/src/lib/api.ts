@@ -17,7 +17,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   auth: {
-    me: ()                           => request<Contributor>("/auth/me"),
+    me: ()                           => request<ContributorProfile>("/auth/me"),
     linkWallet: (addr: string)       => request<{ walletAddress: string }>("/auth/wallet", {
       method: "POST", body: JSON.stringify({ walletAddress: addr }),
     }),

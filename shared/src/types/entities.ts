@@ -80,9 +80,12 @@ export interface Contributor {
   id: string;
   githubLogin: string;
   githubId: number;
+  githubEmail?: string | null;
   avatarUrl: string | null;
-  /** EVM address for receiving USDC payouts */
+  /** Stellar or EVM wallet address for receiving USDC payouts */
   walletAddress: string | null;
+  ledger?: PointsLedger[];
+  payouts?: Payout[];
   createdAt: Date;
   updatedAt: Date;
 }

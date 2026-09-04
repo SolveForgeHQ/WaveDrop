@@ -63,7 +63,7 @@ export async function handlePullRequestClosed(
 // Internal helper — validate + award points for one issue reference
 // ---------------------------------------------------------------------------
 
-type OctokitInstance = Awaited<ReturnType<typeof getInstallationOctokit>>;
+type OctokitInstance = any;
 
 interface ProcessMergedPRInput {
   octokit:     OctokitInstance;
@@ -84,7 +84,7 @@ async function processMergedPR(input: ProcessMergedPRInput) {
     }).catch((e: unknown) => console.warn("[pr.closed] comment failed:", e));
 
   // --- Guard 1: issue must be registered and assigned ---
-  const issue = await prisma.issue.findUnique({
+  const issue = await (prisma.issue as any).findUnique({
     where: { repositoryId_githubNumber: { repositoryId: repoId, githubNumber: issueNumber } },
   });
 
@@ -189,7 +189,7 @@ async function checkCIPassed(
     // All completed runs must have conclusion "success" or "skipped" or "neutral"
     const passing = new Set(["success", "skipped", "neutral"]);
     return runs.every(
-      (run) => run.status === "completed" && passing.has(run.conclusion ?? "")
+      (run: { status: string; conclusion: string | null }) => run.status === "completed" && passing.has(run.conclusion ?? "")
     );
   } catch (err) {
     console.warn("[pr.closed] Could not fetch CI checks:", err);

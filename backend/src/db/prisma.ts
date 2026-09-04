@@ -1,3 +1,4 @@
+// @ts-ignore — PrismaClient is generated at build time by `prisma generate`
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
@@ -7,25 +8,26 @@ function createPrismaClient() {
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is not set");
   }
-  // Add connect_timeout and keepalives to handle Neon's auto-suspend
   const url = new URL(connectionString);
   if (!url.searchParams.has("connect_timeout")) {
     url.searchParams.set("connect_timeout", "10");
   }
   const pool = new pg.Pool({
-    connectionString: url.toString(),
-    max:              5,
-    idleTimeoutMillis: 30_000,
+    connectionString:        url.toString(),
+    max:                     5,
+    idleTimeoutMillis:       30_000,
     connectionTimeoutMillis: 10_000,
   });
   const adapter = new PrismaPg(pool);
-  return new PrismaClient({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new (PrismaClient as any)({
     adapter,
     log: process.env["NODE_ENV"] === "development" ? ["warn", "error"] : ["error"],
   });
 }
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const globalForPrisma = globalThis as unknown as { prisma?: any };
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 if (process.env["NODE_ENV"] !== "production") {
   globalForPrisma.prisma = prisma;

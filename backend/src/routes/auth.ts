@@ -3,33 +3,25 @@ import { fetchGitHubUser, loginOrRegisterContributor, linkWalletAddress } from "
 import { requireAuth } from "../plugins/auth.js";
 
 export async function authRoutes(app: FastifyInstance) {
-  /**
-   * GET /auth/github
-   * Redirected to by the OAuth2 plugin automatically — no handler needed.
-   * The plugin registers the redirect at startRedirectPath.
-   */
-
-  /**
-   * GET /auth/github/callback
-   * GitHub redirects here after the user authorises the app.
-   */
   app.get("/auth/github/callback", async (req, reply) => {
-    const token = await app.githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const token       = await (app as any).githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
     const accessToken = token.token.access_token as string;
 
     const userInfo    = await fetchGitHubUser(accessToken);
     const contributor = await loginOrRegisterContributor(accessToken, userInfo);
 
-    req.session.contributorId = contributor.id;
-    req.session.githubLogin   = contributor.githubLogin;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const session = req.session as any;
+    session.contributorId = contributor.id;
+    session.githubLogin   = contributor.githubLogin;
 
     const frontendUrl = process.env["FRONTEND_URL"] ?? "http://localhost:3000";
 
-    // Decode the redirect path from the OAuth state we encoded at login
     let redirectPath = "/waves";
     try {
       const query = req.query as Record<string, string>;
-      const state  = query["state"] ?? token.token.state as string ?? "";
+      const state = query["state"] ?? (token.token.state as string) ?? "";
       if (state) {
         const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8")) as { redirect?: string };
         if (decoded.redirect?.startsWith("/")) redirectPath = decoded.redirect;
@@ -38,17 +30,15 @@ export async function authRoutes(app: FastifyInstance) {
       // malformed state — fall back to /waves
     }
 
-    reply.redirect(`${frontendUrl}${redirectPath}`);
+    return reply.redirect(`${frontendUrl}${redirectPath}`);
   });
 
-  /**
-   * GET /auth/me
-   * Returns the currently authenticated contributor.
-   */
   app.get("/auth/me", { preHandler: requireAuth }, async (req, reply) => {
     const { prisma } = await import("../db/prisma.js");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const session = req.session as any;
     const contributor = await prisma.contributor.findUnique({
-      where:  { id: req.session.contributorId },
+      where:  { id: session.contributorId as string },
       select: {
         id:            true,
         githubLogin:   true,
@@ -62,11 +52,6 @@ export async function authRoutes(app: FastifyInstance) {
     return contributor;
   });
 
-  /**
-   * POST /auth/wallet
-   * Link or update the contributor's Avalanche wallet address.
-   * Body: { walletAddress: string }
-   */
   app.post<{ Body: { walletAddress: string } }>(
     "/auth/wallet",
     { preHandler: requireAuth },
@@ -76,10 +61,9 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.code(400).send({ error: "walletAddress is required" });
       }
       try {
-        const updated = await linkWalletAddress(
-          req.session.contributorId!,
-          walletAddress
-        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const session   = req.session as any;
+        const updated   = await linkWalletAddress(session.contributorId as string, walletAddress);
         return { walletAddress: updated.walletAddress };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Invalid address";
@@ -88,11 +72,8 @@ export async function authRoutes(app: FastifyInstance) {
     }
   );
 
-  /**
-   * POST /auth/logout
-   */
   app.post("/auth/logout", async (req, reply) => {
     await req.session.destroy();
-    reply.send({ ok: true });
+    return reply.send({ ok: true });
   });
 }

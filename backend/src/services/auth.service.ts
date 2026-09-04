@@ -44,21 +44,29 @@ export async function loginOrRegisterContributor(
 }
 
 /**
- * Validate and checksum an EVM wallet address.
- * Returns the checksummed address or throws if invalid.
+ * Validate Stellar public key (G... 56 chars base32) or EVM address.
  */
-export function validateAndChecksumAddress(raw: string): string {
-  if (!isAddress(raw)) {
-    throw new Error(`Invalid EVM address: ${raw}`);
+export function validateWalletAddress(raw: string): string {
+  const trimmed = raw.trim();
+
+  // Check if valid Stellar account public key or Soroban contract ID
+  const stellarRegex = /^[G|C][A-Z2-7]{55}$/;
+  if (stellarRegex.test(trimmed)) {
+    return trimmed;
   }
-  return getAddress(raw); // EIP-55 checksum
+
+  // Fallback check if EVM address
+  if (isAddress(trimmed)) {
+    return getAddress(trimmed);
+  }
+
+  throw new Error("Invalid wallet address: " + trimmed + ". Must be a valid Stellar public key (starts with G) or EVM address.");
 }
 
 /**
  * Link a wallet address to a contributor.
- * Validates the address is a proper 0x EIP-55 checksummed address.
  */
 export async function linkWalletAddress(contributorId: string, rawAddress: string) {
-  const checksummed = validateAndChecksumAddress(rawAddress);
-  return contributorRepo.setWalletAddress(contributorId, checksummed);
+  const validated = validateWalletAddress(rawAddress);
+  return contributorRepo.setWalletAddress(contributorId, validated);
 }

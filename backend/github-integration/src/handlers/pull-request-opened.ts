@@ -36,10 +36,10 @@ export async function handlePullRequestOpened(
   }
   if (issueNumbers.length === 0) return;
 
-  const octokit = await getInstallationOctokit(installation.id);
+  const octokit = (await getInstallationOctokit(installation.id)) as any;
 
   for (const issueNumber of issueNumbers) {
-    const issue = await prisma.issue.findUnique({
+    const issue = await (prisma.issue as any).findUnique({
       where: { repositoryId_githubNumber: { repositoryId: repo.id, githubNumber: issueNumber } },
     });
     if (!issue) continue;

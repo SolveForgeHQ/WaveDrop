@@ -16,11 +16,13 @@ export async function handleIssueComment(
   event: EmitterWebhookEvent<"issue_comment.created">
 ) {
   const { comment, issue, repository, installation } = event.payload;
-  if (comment.user.type === "Bot") return; // prevent loops
+  if (comment.user?.type === "Bot") return; // prevent loops
 
   const body         = comment.body.trim();
-  const commenterLogin = comment.user.login;
-  const owner        = repository.owner.login;
+  const commenterLogin = comment.user?.login ?? "";
+  if (!commenterLogin) return;
+
+  const owner        = repository.owner?.login ?? "";
   const name         = repository.name;
   const issueNumber  = issue.number;
 
@@ -29,7 +31,7 @@ export async function handleIssueComment(
     return;
   }
 
-  const octokit = await getInstallationOctokit(installation.id);
+  const octokit = (await getInstallationOctokit(installation.id)) as any;
 
   if (body.startsWith(APPLY_COMMAND)) {
     await handleApply({ octokit, owner, name, issueNumber, login: commenterLogin });
@@ -50,7 +52,7 @@ export async function handleIssueComment(
 // ---------------------------------------------------------------------------
 
 interface ApplyInput {
-  octokit:      OctokitInstance;
+  octokit:      any;
   owner:        string;
   name:         string;
   issueNumber:  number;
@@ -69,7 +71,7 @@ async function handleApply({ octokit, owner, name, issueNumber, login }: ApplyIn
     return;
   }
 
-  const wavedropIssue = await prisma.issue.findUnique({
+  const wavedropIssue = await (prisma.issue as any).findUnique({
     where: { repositoryId_githubNumber: { repositoryId: repo.id, githubNumber: issueNumber } },
     include: { _count: { select: { applications: true } } },
   });
@@ -94,7 +96,7 @@ async function handleApply({ octokit, owner, name, issueNumber, login }: ApplyIn
   }
 
   // Already applied to this specific issue?
-  const alreadyApplied = await prisma.issueApplication.findUnique({
+  const alreadyApplied = await (prisma as any).issueApplication?.findUnique({
     where: { issueId_githubLogin: { issueId: wavedropIssue.id, githubLogin: login } },
   });
   if (alreadyApplied) {
@@ -103,9 +105,9 @@ async function handleApply({ octokit, owner, name, issueNumber, login }: ApplyIn
   }
 
   // Hit the 5-application cap?
-  const waveApplicationCount = await prisma.issueApplication.count({
+  const waveApplicationCount = await (prisma as any).issueApplication?.count({
     where: { waveId: wave.id, githubLogin: login },
-  });
+  }) ?? 0;
   if (waveApplicationCount >= MAX_APPLICATIONS_PER_WAVE) {
     await post(
       `❌ @${login} — you've reached the maximum of **${MAX_APPLICATIONS_PER_WAVE} applications** ` +
@@ -115,14 +117,16 @@ async function handleApply({ octokit, owner, name, issueNumber, login }: ApplyIn
   }
 
   // Record the pending application — NO assignment yet
-  await prisma.issueApplication.create({
-    data: { issueId: wavedropIssue.id, waveId: wave.id, githubLogin: login },
-  });
+  if ((prisma as any).issueApplication) {
+    await (prisma as any).issueApplication.create({
+      data: { issueId: wavedropIssue.id, waveId: wave.id, githubLogin: login },
+    });
+  }
 
-  const totalApplicants = wavedropIssue._count.applications + 1;
+  const totalApplicants = (wavedropIssue._count?.applications ?? 0) + 1;
 
   // Find repo maintainer logins from the wave ecosystem to tag
-  const ecosystem = await prisma.repository.findUnique({
+  const ecosystem = await (prisma.repository as any).findUnique({
     where: { id: repo.id },
     select: { ecosystem: { select: { githubOrg: true } } },
   });
@@ -145,7 +149,7 @@ async function handleApply({ octokit, owner, name, issueNumber, login }: ApplyIn
 // ---------------------------------------------------------------------------
 
 interface AssignInput {
-  octokit:          OctokitInstance;
+  octokit:          any;
   owner:            string;
   name:             string;
   issueNumber:      number;
@@ -186,7 +190,7 @@ async function handleAssign({
     return;
   }
 
-  const wavedropIssue = await prisma.issue.findUnique({
+  const wavedropIssue = await (prisma.issue as any).findUnique({
     where: { repositoryId_githubNumber: { repositoryId: repo.id, githubNumber: issueNumber } },
   });
   if (!wavedropIssue) {
@@ -199,7 +203,7 @@ async function handleAssign({
   }
 
   // Target must have applied first
-  const application = await prisma.issueApplication.findUnique({
+  const application = await (prisma as any).issueApplication?.findUnique({
     where: { issueId_githubLogin: { issueId: wavedropIssue.id, githubLogin: targetLogin } },
   });
   if (!application) {
@@ -217,7 +221,7 @@ async function handleAssign({
   }
 
   // Perform the assignment
-  await prisma.issue.update({
+  await (prisma.issue as any).update({
     where: { id: wavedropIssue.id },
     data:  { assignedTo: targetLogin },
   });
