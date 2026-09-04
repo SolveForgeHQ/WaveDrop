@@ -1,0 +1,48 @@
+﻿name: 💡 Feature Request
+description: Suggest an idea, enhancement, or new feature for WaveDrop
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature for WaveDrop! Please provide context on what problem this solves.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Target Component
+      description: Where does this feature belong?
+      options:
+        - "Contracts (Solidity / On-Chain Settlement)"
+        - "Backend API / Database"
+        - "GitHub Webhook & Automation"
+        - "Frontend Dashboard & UX"
+        - "Developer Experience / Tooling"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement / Motivation
+      description: What is the current limitation or problem you want solved?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe how you envision this feature working.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+    validations:
+      required: false
+  - type: checkboxes
+    id: willing_to_contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I am interested in implementing this feature via a Pull Request.
