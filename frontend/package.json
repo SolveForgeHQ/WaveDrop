@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "pages:build": "npx @cloudflare/next-on-pages",
+    "pages:build": "npx --legacy-peer-deps @cloudflare/next-on-pages",
     "preview": "npm run pages:build && wrangler pages dev"
   },
   "dependencies": {
