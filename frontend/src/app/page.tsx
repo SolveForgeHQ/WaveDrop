@@ -3,10 +3,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "../components/ui/Button";
 
-// Avalanche logo from /public/avalanche.svg
-function AvalancheLogo() {
+// Stellar logo from /public/stellar.svg
+function StellarLogo() {
   return (
-    <Image src="/avalanche.svg" alt="Avalanche" width={20} height={20} />
+    <Image src="/stellar.svg" alt="Stellar" width={20} height={20} />
   );
 }
 
@@ -66,17 +66,17 @@ export default function HomePage() {
           <h2 className="text-lg font-bold text-[#f0f0f4] mb-4">Wave Program</h2>
 
           <div className="bg-[#111118] border border-[#27272e] rounded-xl p-6">
-            {/* Avalanche badge */}
+            {/* Stellar badge */}
             <div className="flex items-center gap-2 mb-4">
-              <AvalancheLogo />
-              <span className="text-sm font-semibold text-[#f0f0f4]">Avalanche</span>
-              <span className="text-xs text-[#55556a] ml-1">C-Chain + Fuji Testnet</span>
+              <StellarLogo />
+              <span className="text-sm font-semibold text-[#f0f0f4]">Stellar</span>
+              <span className="text-xs text-[#55556a] ml-1">Mainnet + Testnet</span>
             </div>
 
             <p className="text-sm text-[#8888a0] leading-relaxed">
-              WaveDrop settles contributor rewards entirely on Avalanche, distributing USDC via
+              WaveDrop settles contributor rewards entirely on Stellar (Soroban), distributing USDC via
               on-chain Merkle claims so every payout is cryptographically verifiable. By combining
-              Avalanche&apos;s low gas costs with sub-second finality, WaveDrop keeps settlement cheap
+              Stellar&apos;s low fee costs with sub-second finality, WaveDrop keeps settlement cheap
               and auditable — contributors claim directly from their wallet, no intermediary required.
             </p>
 
