@@ -121,7 +121,7 @@ importers:
         specifier: ^5.101.2
         version: 5.101.2(react@19.2.4)
       '@wavedrop/shared':
-        specifier: workspace:*
+        specifier: file:../shared
         version: link:../shared
       next:
         specifier: 16.2.10
